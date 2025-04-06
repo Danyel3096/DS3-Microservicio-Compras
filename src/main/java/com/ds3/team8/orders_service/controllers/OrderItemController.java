@@ -58,6 +58,11 @@ public class OrderItemController {
     }
 
     // Obtener ítems paginados
+    // Obtener órdenes paginadas
+    // Cambia la URL a algo como /api/v1/order-items/pageable?page=0&size=10&sort=productId,desc
+    // Para el sort= se puede usar cualquier atributo de la entidad User
+    // Por ejemplo para ordenar por apellido desde la Z a la A sería sort=lastName,desc
+    // Para el caso de roles se puede usar sort=role.name,asc (sort=entity.attribute,asc o desc)
     @GetMapping("/pageable")
     public Page<OrderItemResponse> getOrderItemsPageable(Pageable pageable) {
         return orderItemService.findAllPageable(pageable);
