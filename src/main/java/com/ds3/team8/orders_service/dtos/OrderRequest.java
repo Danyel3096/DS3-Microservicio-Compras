@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -24,4 +25,7 @@ public class OrderRequest {
 
     // Lista de items que se van a incluir en la orden
     private List<OrderItemRequest> items;
+
+    // Fecha opcionalmente enviada desde el cliente
+    private LocalDateTime orderDate;
 }

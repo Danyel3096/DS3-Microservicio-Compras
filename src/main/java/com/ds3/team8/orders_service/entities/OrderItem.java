@@ -15,7 +15,9 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Relación con orden
+    /*OJO: CAMBIAR EN ORDERITEM.JAVA TAMBIEN SI SE USA
+    @Column(name = "order_id", nullable = false)
+    private Long orderId;*/
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;

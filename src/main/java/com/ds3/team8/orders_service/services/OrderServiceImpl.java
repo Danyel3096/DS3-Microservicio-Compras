@@ -1,30 +1,12 @@
-/*package com.ds3.team8.orders_service.services;
+package com.ds3.team8.orders_service.services;
 
+import com.ds3.team8.orders_service.dtos.OrderItemResponse;
 import com.ds3.team8.orders_service.dtos.OrderRequest;
 import com.ds3.team8.orders_service.dtos.OrderResponse;
 import com.ds3.team8.orders_service.entities.Order;
 import com.ds3.team8.orders_service.entities.OrderItem;
-import com.ds3.team8.orders_service.exceptions.OrderItemNotFoundException;
 import com.ds3.team8.orders_service.exceptions.OrderNotFoundException;
-import com.ds3.team8.orders_service.repositories.IOrderRepository;
 import com.ds3.team8.orders_service.repositories.IOrderItemRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
-import java.util.List;
-import java.util.Optional;
-
-import javax.management.relation.RoleNotFoundException;
-*/
-//
-package com.ds3.team8.orders_service.services;
-
-import com.ds3.team8.orders_service.dtos.OrderRequest;
-import com.ds3.team8.orders_service.dtos.OrderResponse;
-import com.ds3.team8.orders_service.entities.Order;
-import com.ds3.team8.orders_service.exceptions.OrderNotFoundException;
 import com.ds3.team8.orders_service.repositories.IOrderRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,8 +20,11 @@ public class OrderServiceImpl implements IOrderService {
 
     private final IOrderRepository orderRepository;
 
-    public OrderServiceImpl(IOrderRepository orderRepository) {
+    private final IOrderItemRepository orderItemRepository;
+
+    public OrderServiceImpl(IOrderRepository orderRepository, IOrderItemRepository orderItemRepository) {
         this.orderRepository = orderRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
     // Obtener todas las órdenes
@@ -119,12 +104,28 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     private OrderResponse convertToResponse(Order order) {
+    List<OrderItemResponse> itemResponses = orderItemRepository.findByOrderId(order.getId())
+            .stream()
+            .map(this::convertToItemResponse)
+            .toList();
+
         return new OrderResponse(
-                order.getId(),
-                order.getUserId(),
-                order.getOrderDate(),
-                order.getStatus(),
-                order.getIsActive()
+            order.getId(),
+            order.getUserId(),
+            order.getOrderDate(),
+            order.getStatus(),
+            order.getIsActive(),
+            itemResponses
+     );
+    }
+
+    private OrderItemResponse convertToItemResponse(OrderItem item) {
+    return new OrderItemResponse(
+            item.getId(),
+            item.getOrder().getId(),/*OJO: CAMBIAR EN ORDERITEM.JAVA TAMBIEN SI SE USA item.getOrderId(),*/
+            item.getProductId(),
+            item.getQuantity(),
+            item.getIsActive()
         );
     }
 }
