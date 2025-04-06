@@ -1,7 +1,3 @@
-/*package com.ds3.team8.orders_service.services;
-
-public interface IOrderItemService {
-}*/
 package com.ds3.team8.orders_service.services;
 
 import com.ds3.team8.orders_service.dtos.OrderItemRequest;

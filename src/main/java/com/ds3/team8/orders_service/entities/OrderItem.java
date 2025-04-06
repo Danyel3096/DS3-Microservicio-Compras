@@ -1,29 +1,30 @@
 package com.ds3.team8.orders_service.entities;
 
 import jakarta.persistence.*;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data  // Genera automáticamente getters, setters, equals, hashCode y toString
-@NoArgsConstructor  // Constructor sin argumentos
-@AllArgsConstructor // Constructor con todos los argumentos
-@Entity  // Indica que esta clase es una entidad JPA
-@Table(name = "order_items")  // Nombre de la tabla en la base de datos
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "order_items")
 public class OrderItem {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Autoincremental
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long order_id; // ID de la orden a la que pertenece el item
+    // Relación con orden
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
+
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
 
     @Column(nullable = false)
-    private Long product_id; // Identificador del producto
-
-    @Column(nullable = false)
-    private Long quantity; // Cantidad del producto (stock)
+    private Long quantity;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
