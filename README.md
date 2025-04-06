@@ -44,5 +44,11 @@ mvn package
 Luego, puedes ejecutar el JAR con:
 
 ```sh
-java -jar target/tu-archivo.jar
+java -jar target/orders-service-0.0.1-SNAPSHOT.jar
 ```
+
+## Documentación de la API
+
+La documentación de la API está disponible en Swagger. Una vez que el microservicio esté en ejecución, puedes acceder a ella en la siguiente URL:
+
+[http://localhost:8083/swagger-ui/index.html](http://localhost:8083/swagger-ui/index.html)
