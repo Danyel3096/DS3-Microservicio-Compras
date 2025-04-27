@@ -1,7 +1,6 @@
 package com.ds3.team8.orders_service.repositories;
 
 import com.ds3.team8.orders_service.entities.Order;
-//import com.ds3.team8.orders_service.entities.OrderItem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,15 +29,11 @@ public class IOrderRepositoryTest {
     void setUp() {
         orderRepository.deleteAll();  // Limpia la base de datos antes de cada prueba
         orderItemRepository.deleteAll();
-
-        // Crear y guardar un role antes de cada prueba
-        //order = orderRepository.save(new Order(null, 1L, LocalDateTime.parse("2025-05-10T08:16:00"), "En camino", true, new ArrayList<>()));
     }
 
     @Test
     void testSaveOrder() {
         // Crear y guardar un orden
-        //OrderItem orderItem = orderItemRepository.save(new OrderItem(null, order, 1L, 8L, true));
         order = orderRepository.save(new Order(null, 1L, LocalDateTime.parse("2025-05-10T08:16:00"), "En camino", true, new ArrayList<>()));
         Order savedOrder = orderRepository.save(order);
 
