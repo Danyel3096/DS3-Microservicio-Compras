@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.ds3.team8.orders_service.dtos.OrderRequest;
 import com.ds3.team8.orders_service.dtos.OrderResponse;
-import com.ds3.team8.orders_service.entities.Order;
 import com.ds3.team8.orders_service.services.IOrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

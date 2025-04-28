@@ -3,67 +3,114 @@ package com.ds3.team8.orders_service.controllers;
 import com.ds3.team8.orders_service.dtos.OrderItemRequest;
 import com.ds3.team8.orders_service.dtos.OrderItemResponse;
 import com.ds3.team8.orders_service.services.IOrderItemService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-@RestController // Indica que esta clase es un controlador REST
-@RequestMapping("/api/v1/order-items") // Indica la URL base para acceder a los servicios de esta clase
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@ExtendWith(MockitoExtension.class)
 public class OrderItemControllerTest {
     
+    private MockMvc mockMvc;
+    
+    @Mock
     private IOrderItemService orderItemService;
 
     @InjectMocks
     private OrderItemController orderItemController;
 
-    // Obtener todos los items de una orden
-    @GetMapping
-    public ResponseEntity<List<OrderItemResponse>> getAllOrderItems() {
-        return ResponseEntity.ok(orderItemService.findAll());
+    private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setup() {
+        objectMapper = new ObjectMapper();
+        mockMvc = MockMvcBuilders.standaloneSetup(orderItemController).build();
+        objectMapper.registerModule(new JavaTimeModule());
     }
 
-    // Crear una orden
-    @PostMapping
-    public ResponseEntity<OrderItemResponse> saveOrderItem(@Valid @RequestBody OrderItemRequest orderItemRequest) {
-        OrderItemResponse savedOrderItem = orderItemService.save(orderItemRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedOrderItem);
+    @Test
+    @DisplayName("Debe obtener todos los items de una orden")
+    void testGetAllOrderItems() throws Exception {
+        List<OrderItemResponse> orderItems = List.of(new OrderItemResponse(1L, 1L, 1L, 8L, true));
+
+        when(orderItemService.findAll()).thenReturn(orderItems);
+
+        mockMvc.perform(get("/api/v1/order-items"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(orderItems.size()))
+                .andExpect(jsonPath("$[0].id").value(1L));
     }
 
-    // Actualizar una orden
-    @PutMapping("/{id}")
-    public ResponseEntity<OrderItemResponse> updateOrderItem(
-            @PathVariable Long id,
-            @Valid @RequestBody OrderItemRequest orderItemRequest) {
-        OrderItemResponse updatedOrderItem = orderItemService.update(id, orderItemRequest);
-        return ResponseEntity.ok(updatedOrderItem);
+    @Test
+    @DisplayName("Debe crear un item de orden")
+    void testSaveOrder() throws Exception {
+        OrderItemRequest request = new OrderItemRequest(4L, 1L, 8L);
+        OrderItemResponse response = new OrderItemResponse(2L, 4L, 1L, 8L, true);
+
+        when(orderItemService.save(any(OrderItemRequest.class))).thenReturn(response);
+
+        mockMvc.perform(post("/api/v1/order-items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(2L))
+                .andExpect(jsonPath("$.orderId").value(4L));
     }
 
-    // Buscar itemes de una orden con paginación
-    // Cambia la URL a algo como /api/v1/order-items/pageable?page=0&size=10&sort=firstName,asc
-    // Para el sort= se puede usar cualquier atributo de la entidad User
-    // Por ejemplo para ordenar por apellido desde la Z a la A sería sort=lastName,desc
-    // Para el caso de roles se puede usar sort=role.name,asc (sort=entity.attribute,asc o desc)
-    @GetMapping("/pageable")
-    public Page<OrderItemResponse> findAllPageable(Pageable pageable) {
-        return orderItemService.findAllPageable(pageable);
+    @Test
+    @DisplayName("Debe actualizar un item de orden")
+    void testUpdateOrder() throws Exception {
+        OrderItemRequest request = new OrderItemRequest(3L, 1L, 8L);
+        OrderItemResponse response = new OrderItemResponse(1L, 3L, 1L, 8L, true);
+
+        when(orderItemService.update(eq(1L), any(OrderItemRequest.class))).thenReturn(response);
+
+        mockMvc.perform(put("/api/v1/order-items/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(3L));
     }
 
-    // Obtener un item de una orden por ID
-    @GetMapping("/{id}")
-    public ResponseEntity<OrderItemResponse> getOrderItemById(@PathVariable Long id) {
-        return ResponseEntity.ok(orderItemService.findById(id));
+    @Test
+    @DisplayName("Debe obtener un item de orden por ID")
+    void testGetOrderById() throws Exception {
+        OrderItemResponse order = new OrderItemResponse(1L, 2L, 1L, 8L, true);
+
+        when(orderItemService.findById(1L)).thenReturn(order);
+
+        mockMvc.perform(get("/api/v1/order-items/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.orderId").value(2L));
     }
 
-    // Eliminación lógica de un item de una orden
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteOrderItem(@PathVariable Long id) {
-        orderItemService.delete(id);
-        return ResponseEntity.noContent().build();
+    @Test
+    @DisplayName("Debe eliminar un item de una orden")
+    void testDeleteOrder() throws Exception {
+        doNothing().when(orderItemService).delete(1L);
+
+        mockMvc.perform(delete("/api/v1/order-items/1"))
+                .andExpect(status().isNoContent());
     }
 }
