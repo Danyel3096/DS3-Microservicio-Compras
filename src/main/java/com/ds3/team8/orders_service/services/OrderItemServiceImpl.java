@@ -1,124 +1,108 @@
 package com.ds3.team8.orders_service.services;
 
-import com.ds3.team8.orders_service.dtos.OrderItemRequest;
+import com.ds3.team8.orders_service.exceptions.NotFoundException;
+import com.ds3.team8.orders_service.client.ProductClient;
 import com.ds3.team8.orders_service.dtos.OrderItemResponse;
-import com.ds3.team8.orders_service.entities.Order;
 import com.ds3.team8.orders_service.entities.OrderItem;
-import com.ds3.team8.orders_service.exceptions.OrderItemNotFoundException;
-import com.ds3.team8.orders_service.exceptions.OrderNotFoundException;
+import com.ds3.team8.orders_service.mappers.OrderItemMapper;
 import com.ds3.team8.orders_service.repositories.IOrderItemRepository;
-import com.ds3.team8.orders_service.repositories.IOrderRepository;
+import com.ds3.team8.orders_service.utils.ProductUtil;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class OrderItemServiceImpl implements IOrderItemService {
 
     private final IOrderItemRepository orderItemRepository;
+    private final OrderItemMapper orderItemMapper;
+    private final ProductClient productClient;
 
-    private final IOrderRepository orderRepository;
+    private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
 
-    public OrderItemServiceImpl(IOrderItemRepository orderItemRepository, IOrderRepository orderRepository) {
+
+    public OrderItemServiceImpl(IOrderItemRepository orderItemRepository, OrderItemMapper orderItemMapper, ProductClient productClient) {
         this.orderItemRepository = orderItemRepository;
-        this.orderRepository = orderRepository;
+        this.orderItemMapper = orderItemMapper;
+        this.productClient = productClient;
     }
 
-    // Obtener todos los items de orden
     @Override
     @Transactional(readOnly = true)
     public List<OrderItemResponse> findAll() {
-        return orderItemRepository.findAll()
-                .stream()
-                .map(this::convertToResponse)
-                .toList();
+        List<OrderItem> orderItems = orderItemRepository.findAllByIsActiveTrue();
+        if (orderItems.isEmpty()) {
+            logger.warn("No se encontraron ítems de orden activos");
+            throw new NotFoundException("No se encontraron ítems de orden activos");
+        }
+        logger.info("Se encontraron {} ítems de orden activos", orderItems.size());
+        return orderItemMapper.toOrderItemResponseList(orderItems);
     }
 
-    // Crear un nuevo item de orden
-    @Override
-    @Transactional
-    public OrderItemResponse save(OrderItemRequest request) {
-        OrderItem item = new OrderItem();
-        Order order = orderRepository.findById(request.getOrderId())
-        .orElseThrow(() -> new OrderNotFoundException(request.getOrderId()));
-        item.setOrder(order);
-        item.setProductId(request.getProductId());
-        item.setQuantity(request.getQuantity());
-        item.setIsActive(true);
-
-        OrderItem savedItem = orderItemRepository.save(item);
-        return convertToResponse(savedItem);
-    }
-
-    // Actualizar un item de orden
-    @Override
-    @Transactional
-    public OrderItemResponse update(Long id, OrderItemRequest request) {
-        OrderItem item = orderItemRepository.findById(id)
-                .orElseThrow(() -> new OrderItemNotFoundException(id));
-
-        if (request.getOrderId() != null) {
-            Order order = new Order();
-            order.setId(request.getOrderId());
-            item.setOrder(order);
-        }                
-        if (request.getProductId() != null) item.setProductId(request.getProductId());
-        if (request.getQuantity() != null) item.setQuantity(request.getQuantity());
-
-        OrderItem updatedItem = orderItemRepository.save(item);
-        return convertToResponse(updatedItem);
-    }
-
-    // Buscar items con paginación
     @Override
     @Transactional(readOnly = true)
     public Page<OrderItemResponse> findAllPageable(Pageable pageable) {
-        return orderItemRepository.findAll(pageable)
-                .map(this::convertToResponse);
+        Page<OrderItem> orderItems = orderItemRepository.findAllByIsActiveTrue(pageable);
+        if (orderItems.isEmpty()) {
+            logger.warn("No se encontraron ítems de orden activos");
+            throw new NotFoundException("No se encontraron ítems de orden activos");
+        }
+        logger.info("Se encontraron {} ítems de orden activos", orderItems.getTotalElements());
+        return orderItems.map(orderItemMapper::toOrderItemResponse);
     }
 
-    // Buscar item por ID
     @Override
     @Transactional(readOnly = true)
     public OrderItemResponse findById(Long id) {
-        OrderItem item = orderItemRepository.findById(id)
-                .orElseThrow(() -> new OrderItemNotFoundException(id));
-
-        return convertToResponse(item);
+        Optional<OrderItem> orderItemOptional = orderItemRepository.findByIdAndIsActiveTrue(id);
+        if (orderItemOptional.isEmpty()) {
+            logger.error("Ítem de orden con ID {} no encontrado", id);
+            throw new NotFoundException("Item de orden no encontrado");
+        }
+        logger.info("Ítem de orden con ID {} encontrado", id);
+        return orderItemMapper.toOrderItemResponse(orderItemOptional.get());
     }
 
-    // Buscar items por ID de orden
     @Override
     @Transactional(readOnly = true)
-    public List<OrderItemResponse> findByOrderId(Long orderId) {
-        return orderItemRepository.findByOrderId(orderId)
-                .stream()
-                .map(this::convertToResponse)
-                .toList();
+    public List<OrderItemResponse> findAllByOrderId(Long orderId) {
+        List<OrderItem> orderItems = orderItemRepository.findAllByOrderIdAndIsActiveTrue(orderId);
+        if (orderItems.isEmpty()) {
+            logger.warn("No se encontraron ítems de orden activos para la orden con ID {}", orderId);
+            throw new NotFoundException("No se encontraron ítems de orden activos para la orden especificada");
+        }
+        logger.info("Se encontraron {} ítems de orden activos para la orden con ID {}", orderItems.size(), orderId);
+        return orderItemMapper.toOrderItemResponseList(orderItems);
     }
 
-    // Eliminar (desactivar) un item
     @Override
-    @Transactional
-    public void delete(Long id){
-        OrderItem existingItem = orderItemRepository.findById(id)
-                .orElseThrow(() -> new OrderItemNotFoundException(id));
-
-        existingItem.setIsActive(false);
-        orderItemRepository.save(existingItem);
+    @Transactional(readOnly = true)
+    public Page<OrderItemResponse> findAllByOrderIdPageable(Long orderId, Pageable pageable) {
+        Page<OrderItem> orderItems = orderItemRepository.findAllByOrderIdAndIsActiveTrue(orderId, pageable);
+        if (orderItems.isEmpty()) {
+            logger.warn("No se encontraron ítems de orden activos para la orden con ID {}", orderId);
+            throw new NotFoundException("No se encontraron ítems de orden activos para la orden especificada");
+        }
+        logger.info("Se encontraron {} ítems de orden activos para la orden con ID {}", orderItems.getTotalElements(), orderId);
+        return orderItems.map(orderItemMapper::toOrderItemResponse);
     }
 
-    private OrderItemResponse convertToResponse(OrderItem item) {
-        return new OrderItemResponse(
-                item.getId(),
-                item.getOrder().getId(),/*OJO: CAMBIAR EN ORDERITEM.JAVA TAMBIEN SI SE USA item.getOrderId(),*/
-                item.getProductId(),
-                item.getQuantity(),
-                item.getIsActive()
-        );
+    @Override
+    @Transactional(readOnly = true)
+    public Boolean orderItemHasProducts(Long productId) {
+        // Validar que el producto existe
+        ProductUtil.validateProduct(productClient, productId);
+        // Verificar si existe un ítem de orden activo con el producto especificado
+        logger.info("Verificando si existe un ítem de orden activo con el producto ID {}", productId);
+        return orderItemRepository.existsByProductIdAndOrderIsActiveTrue(productId);
     }
+
+
 }
