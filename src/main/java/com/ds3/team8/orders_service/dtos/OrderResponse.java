@@ -5,8 +5,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
+
+import com.ds3.team8.orders_service.enums.OrderStatus;
 
 @Getter
 @Setter
@@ -14,9 +16,9 @@ import java.util.List;
 @NoArgsConstructor
 public class OrderResponse {
     private Long id;
-    private Long userId;
-    private LocalDateTime orderDate;
-    private String status;
-    private Boolean isActive;
-    private List<OrderItemResponse> items; // Lista de items asociados a la orden
+    private Long customerId;
+    private OrderStatus orderStatus;;
+    private BigDecimal totalAmount;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
