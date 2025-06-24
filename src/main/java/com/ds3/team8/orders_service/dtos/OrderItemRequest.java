@@ -12,14 +12,13 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderItemRequest {
-
-    @NotNull(message = "El ID de la orden es obligatorio")
+    @NotNull(message = "El campo 'orderId' es obligatorio")
     private Long orderId;
 
-    @NotNull(message = "El ID del producto es obligatorio")
+    @NotNull(message = "El campo 'productId' es obligatorio")
     private Long productId;
 
-    @NotNull(message = "La cantidad es obligatoria")
-    @Min(value = 1, message = "La cantidad debe ser al menos 1")
-    private Long quantity;
+    @NotNull(message = "El campo 'quantity' es obligatorio")
+    @Min(value = 1, message = "El campo 'quantity' debe ser mayor que cero")
+    private Integer quantity;
 }
