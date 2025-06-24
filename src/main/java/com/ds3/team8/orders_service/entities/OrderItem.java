@@ -1,5 +1,7 @@
 package com.ds3.team8.orders_service.entities;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,19 +17,40 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /*OJO: CAMBIAR EN ORDERITEM.JAVA TAMBIEN SI SE USA
-    @Column(name = "order_id", nullable = false)
-    private Long orderId;*/
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
+    private Order order; // Pedido al que pertenece el item
 
     @Column(name = "product_id", nullable = false)
-    private Long productId;
+    private Long productId; // Producto asociado al item
 
     @Column(nullable = false)
-    private Long quantity;
+    private Integer quantity; // Cantidad del producto
+
+   @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @PreUpdate
+    public void setLastUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public OrderItem(Long productId, Integer quantity){
+        this.productId = productId;
+        this.quantity = quantity;
+    }
 }
