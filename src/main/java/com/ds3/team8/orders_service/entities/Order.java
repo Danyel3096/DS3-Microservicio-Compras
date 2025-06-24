@@ -5,8 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.ds3.team8.orders_service.enums.OrderStatus;
 
 @Data
 @NoArgsConstructor
@@ -18,20 +21,38 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Relación con usuario (solo si no vas a usar un microservicio separado para resolver user_id)
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "customer_id", nullable = false)
+    private Long customerId; // ID del cliente
 
-    @Column(name = "order_date", nullable = false)
-    private LocalDateTime orderDate = LocalDateTime.now();
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_status", nullable = false)
+    private OrderStatus orderStatus = OrderStatus.PENDING_PAYMENT; // Estado de la orden
 
-    @Column(nullable = false)
-    private String status;
+    @Column(name = "total_amount", nullable = false)
+    private BigDecimal totalAmount; // Monto total de la orden
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> items; // Lista de productos en la orden
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    // Relación uno a muchos con order_items
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> items;
+    @PreUpdate
+    public void setLastUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean isActive) {
+        this.isActive = isActive;
+    }
 }
